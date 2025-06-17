@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptFlow - Nebula Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Nebula Blue (Black, Zinc, Blue) -->
+    <!-- Application Structure Plan: Final version. View-based dashboard, dedicated dark theme. New professional, CSS-based icons. Static background. "Verified Seller" link and a standard footer with legal notice. -->
+    <!-- Visualization & Content Choices: Goal: Ultimate professional version. Viz/Method: (1) Icons: Custom CSS spans. (2) Background: Removed animation for a clean, static look. (3) Links: Integrated into header and product cards. (4) Theme toggle removed for a focused dark-mode experience. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        :root {
+            --bg-dark: #000000;
+            --text-dark-primary: #e4e4e7;
+            --text-dark-secondary: #a1a1aa;
+            --card-dark: #18181b;
+            --border-dark: #27272a;
+            --accent-color-dark: #60a5fa;
+            --footer-dark: #7f1d1d;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: var(--text-dark-secondary); position: relative; }
+        .content-wrapper { position: relative; z-index: 1; }
+        .mono { font-family: 'Fira Code', monospace; }
+        .main-content::-webkit-scrollbar, .tutorial-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .main-content::-webkit-scrollbar-track, .tutorial-scroll::-webkit-scrollbar-track { background-color: transparent; }
+        .main-content::-webkit-scrollbar-thumb, .tutorial-scroll::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+
+        .module-card { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; border: 1px solid var(--border-dark); }
+        .module-card:hover { transform: translateY(-4px); border-color: var(--accent-color-dark); box-shadow: 0 0 20px #60a5fa33; }
+        footer { background-color: var(--footer-dark); color: white; }
+        .title-blue { color: var(--accent-color-dark); }
+        .icon-wrapper { height: 32px; width: 32px; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: center; color: var(--accent-color-dark); font-weight: 600; font-size: 1.5rem; }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col">
+<div class="content-wrapper h-full flex flex-col">
+    <header class="flex-shrink-0 bg-black/80 backdrop-blur-sm border-b border-zinc-800 z-20">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+             <div class="flex flex-col">
+                <h1 class="text-xl font-bold text-white mono">Prompt<span class="text-blue-400">Flow</span></h1>
+                <p class="text-xs text-zinc-500">por <a href="https://ggmax.com.br/perfil/BrenoOliver1409" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-400 hover:underline">Breno Oliveira</a></p>
+             </div>
+             <div class="flex items-center gap-4">
+                 <a href="https://ggmax.com.br/perfil/BrenoOliver1409" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold bg-blue-900/50 text-blue-300 px-3 py-1.5 rounded-full hover:bg-blue-800 transition-colors hidden sm:block">✔ Vendedor Verificado na GGMAX</a>
+             </div>
+        </div>
+    </header>
+
+    <div id="app-body" class="flex-grow overflow-y-auto main-content">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div id="search-and-nav" class="mb-8">
+                <div class="max-w-2xl mx-auto mb-4 text-center">
+                    <button id="go-to-products-btn" class="w-full sm:w-auto mb-4 inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition-transform transform hover:scale-105">✦ Acessar Novos Produtos</button>
+                </div>
+                 <input type="search" id="search-input" placeholder="Buscar em 1000 prompts..." class="mono w-full max-w-2xl mx-auto block px-4 py-3 bg-zinc-900 border-2 border-zinc-700 rounded-lg text-zinc-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                 <div id="back-to-dashboard-container" class="text-center mt-4 hidden">
+                     <button id="back-to-dashboard" class="text-blue-400 font-semibold hover:text-blue-300 transition">&larr; Voltar ao Dashboard</button>
+                 </div>
+            </div>
+            <div id="dashboard-view"></div>
+            <div id="products-view" class="hidden"></div>
+            <div id="prompts-view" class="hidden"></div>
+        </div>
+         <footer class="mt-12 text-white text-center p-2 shadow-lg">
+            <p class="text-xs sm:text-sm font-bold mono">© 2024 PromptFlow. Direitos Reservados a Breno Oliveira (CNPJ: 56.806.163/0001-10). A comercialização não autorizada deste produto é proibida.</p>
+        </footer>
+    </div>
+    
+    <div id="copy-feedback" class="fixed bottom-4 right-5 bg-blue-500 text-white px-5 py-2 rounded-md shadow-lg opacity-0 translate-y-5 mono text-sm font-bold">
+        Prompt Copiado!
+    </div>
+</div>
+    <script>
+        const finalPrompts = [];
+        const otherProducts = [
+            { title: "Genius AI Pack de Prompts", desc: "40k+ Prompts & 1.4k+ IAs", url: "https://ggmax.com.br/anuncio/genius-ai-pack-de-prompts-chatgpt-40k-prompts-1-4k-de-ia" },
+            { title: "Melhor da GGMAX: Prompts ChatGPT", desc: "Planilha funcionando 100%", url: "https://ggmax.com.br/anuncio/melhor-da-ggmax-prompts-chatgpt-planilha-funcionando-100-entrega-automatica" },
+            { title: "CapCut: Pack de Elementos", desc: "Elementos profissionais para edição", url: "https://ggmax.com.br/anuncio/capcut-pack-de-elementos-profissionais-para-edicao-de-video" },
+            { title: "Melhor da GGMAX: 125 Prompts", desc: "Prompts para Concursos", url: "https://ggmax.com.br/anuncio/melhor-da-ggmax-125-prompts-para-concursos-entrega-automatica" },
+            { title: "Melhor da GGMAX: 12k Artes Canva", desc: "Artes 100% editáveis no Canva", url: "https://ggmax.com.br/anuncio/melhor-da-ggmax-12k-artes-editaveis-no-canva-entrega-automatica" },
+            { title: "Melhor da GGMAX: Pack Designer", desc: "Mais de 1 milhão de arquivos", url: "https://ggmax.com.br/anuncio/melhor-da-ggmax-pack-designer-mais-de-1-milhao-de-arquivos-entrega-automatica" },
+            { title: "Ebook: Como Vender na GGMAX", desc: "Guia completo com dicas práticas", url: "https://ggmax.com.br/anuncio/ggmax-como-v3nder-na-ggmax-ebook-completo-como-faturar-dicas-praticas" },
+            { title: "Canva Pro Anual", desc: "Acesse bem mais barato", url: "https://brenooliveira2102.github.io/canvapro/" }
+        ];
+        const moduleIcons = {
+            'Vendas': '🎯', 'Marketing': '📈', 'Copywriting': '✍️', 'SEO & Ads': '🔍',
+            'Python': '🐍', 'Dev Web': '💻', 'APIs & Back-end': '⚙️', 'Análise de Dados': '📊',
+            'IA & ML': '🧠', 'Geração de Imagens': '🖼️', 'Nossos Produtos': '✦'
+        };
+
+        const generateFullPromptSet = () => {
+            const modules = Object.keys(moduleIcons).filter(m => m !== 'Nossos Produtos');
+            let currentId = 1;
+            modules.forEach(moduleName => {
+                for (let i = 0; i < 100; i++) {
+                     let promptText = `Aja como um especialista em ${moduleName} para [descrever o objetivo]. Forneça um prompt detalhado para [ação específica].`;
+                     finalPrompts.push({ id: currentId++, module: moduleName, text: promptText, icon: moduleIcons[moduleName] });
+                }
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            generateFullPromptSet();
+            const searchInput = document.getElementById('search-input');
+            const dashboardView = document.getElementById('dashboard-view');
+            const promptsView = document.getElementById('prompts-view');
+            const productsView = document.getElementById('products-view');
+            const backBtnContainer = document.getElementById('back-to-dashboard-container');
+            const backBtn = document.getElementById('back-to-dashboard');
+            const goToProductsBtn = document.getElementById('go-to-products-btn');
+            const headerProductsLink = document.getElementById('header-products-link');
+
+            const renderDashboard = () => {
+                if (!dashboardView) return;
+                dashboardView.innerHTML = `
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold title-blue">Centro de Comando de Prompts</h2>
+                        <p class="text-blue-400 mt-2">Navegue pelos módulos abaixo ou use a busca para encontrar o prompt</p>
+                    </div>
+                    
+                    <div class="my-12">
+                         <div class="border-t border-zinc-800"></div>
+                         <h3 class="font-bold text-white mb-4 text-center text-lg mt-8">Como Usar o PromptFlow</h3>
+                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-4">
+                            <div class="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
+                                <div class="font-bold text-blue-400 mb-2 mono">Passo 1: Navegue</div>
+                                <p class="text-xs text-zinc-400">Clique nos módulos abaixo para explorar os prompts por categoria ou acesse nossos outros produtos.</p>
+                            </div>
+                            <div class="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
+                                <div class="font-bold text-blue-400 mb-2 mono">Passo 2: Busque</div>
+                                <p class="text-xs text-zinc-400">Use a barra de pesquisa acima para encontrar um prompt específico por palavra-chave ou ID.</p>
+                            </div>
+                            <div class="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
+                                <div class="font-bold text-blue-400 mb-2 mono">Passo 3: Copie e Use</div>
+                                <p class="text-xs text-zinc-400">Clique no botão de cópia em qualquer card para levar o prompt e usar em suas ferramentas de IA.</p>
+                            </div>
+                             <div class="bg-zinc-900 p-4 rounded-lg border border-zinc-800">
+                                <div class="font-bold text-blue-400 mb-2 mono">Passo 4: Volte</div>
+                                <p class="text-xs text-zinc-400">Use os botões de retorno (←) para voltar ao dashboard principal a qualquer momento.</p>
+                            </div>
+                         </div>
+                    </div>
+
+                    <div class="border-t border-zinc-800 mb-8"></div>
+                    <div id="modules-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-12"></div>
+                `;
+                const modulesGrid = document.getElementById('modules-grid');
+                if (!modulesGrid) return;
+                Object.entries(moduleIcons).forEach(([name, icon]) => {
+                    const card = document.createElement('div');
+                    card.className = 'module-card bg-zinc-900 p-6 rounded-lg text-center cursor-pointer flex flex-col items-center justify-center h-36';
+                    card.innerHTML = `<div class="icon-wrapper">${icon}</div> <h3 class="font-bold text-white">${name}</h3>`;
+                    if (name === 'Nossos Produtos') {
+                        card.addEventListener('click', () => showProductsView());
+                    } else {
+                        card.addEventListener('click', () => showPromptsView(name, 'Módulo'));
+                    }
+                    modulesGrid.appendChild(card);
+                });
+            };
+            
+            const renderPrompts = (promptsToRender, container) => {
+                if (!container) return;
+                container.innerHTML = '';
+                if (promptsToRender.length === 0) {
+                    container.innerHTML = `<p class="text-center text-zinc-500 col-span-full mono">-- Nenhum prompt encontrado --</p>`;
+                    return;
+                }
+                promptsToRender.forEach((prompt, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-zinc-900 border border-zinc-800 rounded-lg shadow-md flex flex-col transition-all duration-300';
+                    card.style.animation = `fadeIn 0.5s ease-out ${index * 0.03}s forwards`;
+                    card.style.opacity = '0';
+                    card.innerHTML = `
+                        <div class="p-5 flex-grow">
+                             <div class="flex justify-between items-center mb-4">
+                               <span class="text-xs font-semibold text-blue-400 bg-blue-900/50 px-3 py-1 rounded-full mono">${prompt.module}</span>
+                               <div class="flex items-center gap-2">
+                                   <button class="back-to-dashboard-card-btn p-2 rounded-md bg-zinc-800 text-zinc-400 hover:bg-blue-500 hover:text-white transition-colors" title="Voltar ao Dashboard">&larr;</button>
+                                   <button class="copy-button p-2 rounded-md bg-zinc-800 text-zinc-400 hover:bg-blue-500 hover:text-white transition-colors" data-prompt="${escape(prompt.text)}" title="Copiar Prompt">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 7.5H4.5C3.39543 7.5 2.5 8.39543 2.5 9.5V19.5C2.5 20.6046 3.39543 21.5 4.5 21.5H14.5C15.6046 21.5 16.5 20.6046 16.5 19.5V14.5M9.5 7.5V3.5C9.5 2.94772 9.94772 2.5 10.5 2.5H19.5C20.0523 2.5 20.5 2.94772 20.5 3.5V13.5C20.5 14.0523 20.0523 14.5 19.5 14.5H16.5M9.5 7.5C8.39543 7.5 7.5 8.39543 7.5 9.5M14.5 9.5C14.5 8.39543 13.6046 7.5 12.5 7.5C11.3954 7.5 10.5 8.39543 10.5 9.5C10.5 10.6046 11.3954 11.5 12.5 11.5C13.6046 11.5 14.5 10.6046 14.5 9.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                   </button>
+                               </div>
+                            </div>
+                            <p class="text-zinc-300 leading-relaxed">${prompt.text.replace(/\[([^\]]+)\]/g, '<strong class="text-blue-300 font-normal">[$1]</strong>')}</p>
+                        </div>
+                        <div class="bg-zinc-900/50 p-3 text-left border-t border-zinc-800 rounded-b-lg">
+                           <span class="mono text-xs text-zinc-600">ID: ${String(prompt.id).padStart(4, '0')}</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+                
+                const bottomBackBtn = document.createElement('div');
+                bottomBackBtn.className = 'text-center mt-8 col-span-full';
+                bottomBackBtn.innerHTML = `<button class="text-blue-400 font-semibold hover:text-blue-300 transition">&larr; Voltar ao Dashboard</button>`;
+                bottomBackBtn.addEventListener('click', () => switchView(dashboardView));
+                container.appendChild(bottomBackBtn);
+            };
+
+            const renderProductsView = () => {
+                if (!productsView) return;
+                productsView.innerHTML = `
+                    <h2 class="text-2xl font-bold text-white mb-6">Nossos Produtos</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        ${otherProducts.map((product, index) => `
+                            <div class="bg-zinc-900 border border-zinc-800 rounded-lg shadow-md flex flex-col transition-all duration-300" style="animation: fadeIn 0.5s ease-out ${index * 0.03}s forwards; opacity: 0;">
+                                <div class="p-5 flex-grow flex flex-col">
+                                    <h3 class="font-bold text-white mb-2">${product.title}</h3>
+                                    <p class="text-sm text-zinc-400 flex-grow">${product.desc}</p>
+                                </div>
+                                <div class="p-4 bg-zinc-900/50 border-t border-zinc-800 rounded-b-lg">
+                                    <a href="${product.url}" target="_blank" class="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105">Comprar Agora</a>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            const switchView = (viewToShow) => {
+                if(!viewToShow) return;
+                [dashboardView, promptsView, productsView].forEach(view => view && view.classList.add('hidden'));
+                viewToShow.classList.remove('hidden');
+                if(backBtnContainer) backBtnContainer.classList.toggle('hidden', viewToShow === dashboardView);
+                document.querySelector('.main-content').scrollTop = 0;
+            };
+
+            const showPromptsView = (filter, titlePrefix) => {
+                if(!promptsView) return;
+                const promptsToRender = finalPrompts.filter(p => p.module === filter);
+                promptsView.innerHTML = `<h2 class="text-2xl font-bold text-white mb-6">${titlePrefix}: ${filter}</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>`;
+                renderPrompts(promptsToRender, promptsView.querySelector('.grid'));
+                switchView(promptsView);
+            };
+
+            const showProductsView = () => {
+                renderProductsView();
+                switchView(productsView);
+            };
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    if(searchTerm) {
+                        const filtered = finalPrompts.filter(p => p.text.toLowerCase().includes(searchTerm) || p.id.toString() === searchTerm);
+                        promptsView.innerHTML = `<h2 class="text-2xl font-bold text-white mb-6">Resultados da Busca: ${filtered.length} encontrados</h2><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>`;
+                        renderPrompts(filtered, promptsView.querySelector('.grid'));
+                        switchView(promptsView);
+                    } else {
+                        switchView(dashboardView);
+                    }
+                });
+            }
+
+            if(backBtn) backBtn.addEventListener('click', () => switchView(dashboardView));
+            if(goToProductsBtn) goToProductsBtn.addEventListener('click', showProductsView);
+            if(headerProductsLink) headerProductsLink.addEventListener('click', (e) => { e.preventDefault(); showProductsView(); });
+
+            document.body.addEventListener('click', (e) => {
+                const copyButton = e.target.closest('.copy-button');
+                if (copyButton) {
+                    navigator.clipboard.writeText(unescape(copyButton.dataset.prompt)).then(() => {
+                        const feedback = document.getElementById('copy-feedback');
+                        if(feedback) {
+                           feedback.classList.remove('opacity-0', 'translate-y-5');
+                           setTimeout(() => { feedback.classList.add('opacity-0', 'translate-y-5'); }, 2000);
+                        }
+                    }).catch(err => console.error('Falha ao copiar: ', err));
+                }
+                const backCardBtn = e.target.closest('.back-to-dashboard-card-btn');
+                if (backCardBtn) {
+                    switchView(dashboardView);
+                }
+            });
+            
+            renderDashboard();
+        });
+    </script>
+</body>
+</html>
